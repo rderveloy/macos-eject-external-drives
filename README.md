@@ -1,4 +1,6 @@
 # macos-eject-external-drives
+A simple MacOS terminal script to safely eject external drives. Useful for when you need 
+to unplug your MacBook and go. 
 
 [![CC BY-SA 4.0][cc-by-sa-shield]][cc-by-sa]
 
