@@ -1,11 +1,15 @@
 #! /bin/bash
 
-# Have user authenticate if needed:
+echo ""
+echo "*** External Drive Ejection Utility ***"
+
+# Verify admin permissions:
+echo "Verifying admin permissions.  Please enter your password if prompted."
 sudo echo ""
 
 
-# First, make sure there are no running backup processes:
-echo -n "Stopping any currently running time machine backups..."
+# First, we need make sure there are no running Time Machine backup processes:
+echo -n "Stopping any currently running Time Machine backups..."
 sudo tmutil stopbackup
 echo "Done!"
 
