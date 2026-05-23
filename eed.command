@@ -53,5 +53,22 @@ else
 fi
 
 echo ""
-echo "Please verify external disks have been ejected before disconnecting."
+echo "Waiting for drives to be physically disconnected..."
+timeout=60
+elapsed=0
+while true; do
+    remaining=$(diskutil list external physical 2>/dev/null | grep -E '^/dev/' | grep -Eo 'disk[0-9]+')
+    if [ -z "$remaining" ]; then
+        echo "All drives disconnected. Safe to go!"
+        break
+    fi
+    if [ $elapsed -ge $timeout ]; then
+        echo "Timed out waiting. The following drives are still connected:"
+        echo "$remaining" | sed 's/^/  /'
+        break
+    fi
+    sleep 1
+    ((elapsed++))
+done
+
 echo "Goodbye!"
