@@ -1,6 +1,6 @@
 # macos-eject-external-drives
-A simple MacOS terminal script to safely eject external drives. Useful for when you need 
-to unplug your MacBook and go. 
+A simple macOS terminal script to safely eject external drives. Useful for when you need
+to unplug your MacBook and go.
 
 [![CC BY-SA 4.0][cc-by-sa-shield]][cc-by-sa]
 
@@ -13,14 +13,55 @@ This work is licensed under a
 [cc-by-sa-image]: https://licensebuttons.net/l/by-sa/4.0/88x31.png
 [cc-by-sa-shield]: https://img.shields.io/badge/License-CC%20BY--SA%204.0-lightgrey.svg
 
-Have you ever been running late, and you needed to take your MacBook with you, but Time 
+Have you ever been running late, and you needed to take your MacBook with you, but Time
 Machine is taking its sweet time backing up to an external drive?
 
-Need to disconnect your external physical drives, but don't want accidentially eject 
-your iPhone because the eject icons in finder are really small?
+Need to disconnect your external physical drives, but don't want to accidentally eject
+your iPhone because the eject icons in Finder are really small?
 
-Then this simple script is for you!  Just double click the command file or an alias of
-your choosing.
+Then this simple script is for you!
 
-Note: While this script will stop a Time Machine backup in progress, it will Will *not* 
+---
+
+## Install via Homebrew
+
+```sh
+brew tap rderveloy/macos-eject-external-drives https://github.com/rderveloy/macos-eject-external-drives
+brew install --cask eject-external-drives
+```
+
+This will:
+1. Install **Eject External Drives.app** to `/Applications/` so it appears in Launchpad and can be pinned to the Dock.
+2. Place **Eject External Drives.command** on your Desktop for double-click access, just like before.
+
+To uninstall:
+
+```sh
+brew uninstall --cask eject-external-drives
+brew untap rderveloy/macos-eject-external-drives
+```
+
+---
+
+## Manual Install
+
+1. Download `eed.command` from this repository.
+2. Make it executable:
+   ```sh
+   chmod +x eed.command
+   ```
+3. Double-click `eed.command` in Finder, or run it directly in Terminal.
+
+---
+
+## Usage
+
+Double-click **Eject External Drives** in Launchpad, from the Dock, on your Desktop,
+or run `eed.command` directly in Terminal. The script will:
+
+1. Stop any running Time Machine backup (prompts for your password only if needed).
+2. Eject all external physical drives, reporting success or failure per drive.
+3. Display a live status for each drive and exit once all are ejected.
+
+Note: This script will stop a Time Machine backup in progress, but will **not**
 automatically cancel file transfers that are in progress to your external drives.

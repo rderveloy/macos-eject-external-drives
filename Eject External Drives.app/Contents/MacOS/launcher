@@ -1,0 +1,17 @@
+#!/bin/bash
+SELF="$0"
+while [ -L "$SELF" ]; do SELF=$(readlink "$SELF"); done
+SELF_DIR=$(cd "$(dirname "$SELF")" && pwd)
+SCRIPT=$(cd "$SELF_DIR/../Resources" && pwd)/eed.command
+
+if [ ! -f "$SCRIPT" ]; then
+    osascript -e 'display alert "Eject External Drives" message "Could not locate eed.command inside the app bundle." as critical'
+    exit 1
+fi
+
+osascript <<APPLESCRIPT
+tell application "Terminal"
+    activate
+    do script "exec '$SCRIPT'"
+end tell
+APPLESCRIPT
