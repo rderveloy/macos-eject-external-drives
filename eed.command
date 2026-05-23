@@ -57,9 +57,9 @@ drive_count=$(echo "$drives" | wc -l | xargs)
 current=$(diskutil list external physical 2>/dev/null | grep -Eo 'disk[0-9]+')
 
 if [ -z "$current" ]; then
-    echo "All drives disconnected. Safe to go!"
+    echo "All drives ejected. Safe to go!"
 else
-    echo "Waiting for drives to be physically disconnected..."
+    echo "Waiting for drives to be ejected..."
     spinner='|/-\'
     spin_idx=0
     start=$SECONDS
@@ -76,17 +76,17 @@ else
                 printf "  %-8s %-15s\n" "$drive" "[$char]"
                 ((still++))
             else
-                printf "  %-8s %-15s\n" "$drive" "[disconnected]"
+                printf "  %-8s %-15s\n" "$drive" "[ejected]"
             fi
         done <<< "$drives"
         if [ $still -eq 0 ]; then
             echo ""
-            echo "All drives disconnected. Safe to go!"
+            echo "All drives ejected. Safe to go!"
             break
         fi
         if [ $(( SECONDS - start )) -ge 60 ]; then
             echo ""
-            echo "Timed out after 60s. Drives may still be connected."
+            echo "Timed out after 60s. Some drives may not have ejected."
             break
         fi
         ((spin_idx++))
