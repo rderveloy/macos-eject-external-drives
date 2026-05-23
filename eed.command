@@ -53,5 +53,45 @@ else
 fi
 
 echo ""
-echo "Please verify external disks have been ejected before disconnecting."
+drive_count=$(echo "$drives" | wc -l | xargs)
+current=$(diskutil list external physical 2>/dev/null | grep -Eo 'disk[0-9]+')
+
+if [ -z "$current" ]; then
+    echo "All drives ejected. Safe to go!"
+else
+    echo "Waiting for drives to be ejected..."
+    spinner='|/-\'
+    spin_idx=0
+    start=$SECONDS
+
+    while IFS= read -r drive; do printf "  %-8s [ ]\n" "$drive"; done <<< "$drives"
+
+    while true; do
+        char="${spinner:$((spin_idx % 4)):1}"
+        current=$(diskutil list external physical 2>/dev/null | grep -Eo 'disk[0-9]+')
+        printf "\033[%dA" "$drive_count"
+        still=0
+        while IFS= read -r drive; do
+            if echo "$current" | grep -q "^${drive}$"; then
+                printf "  %-8s %-15s\n" "$drive" "[$char]"
+                ((still++))
+            else
+                printf "  %-8s %-15s\n" "$drive" "[ejected]"
+            fi
+        done <<< "$drives"
+        if [ $still -eq 0 ]; then
+            echo ""
+            echo "All drives ejected. Safe to go!"
+            break
+        fi
+        if [ $(( SECONDS - start )) -ge 60 ]; then
+            echo ""
+            echo "Timed out after 60s. Some drives may not have ejected."
+            break
+        fi
+        ((spin_idx++))
+        sleep 0.25
+    done
+fi
+
 echo "Goodbye!"
