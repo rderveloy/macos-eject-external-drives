@@ -53,22 +53,45 @@ else
 fi
 
 echo ""
-echo "Waiting for drives to be physically disconnected..."
-timeout=60
-elapsed=0
-while true; do
-    remaining=$(diskutil list external physical 2>/dev/null | grep -E '^/dev/' | grep -Eo 'disk[0-9]+')
-    if [ -z "$remaining" ]; then
-        echo "All drives disconnected. Safe to go!"
-        break
-    fi
-    if [ $elapsed -ge $timeout ]; then
-        echo "Timed out waiting. The following drives are still connected:"
-        echo "$remaining" | sed 's/^/  /'
-        break
-    fi
-    sleep 1
-    ((elapsed++))
-done
+drive_count=$(echo "$drives" | wc -l | xargs)
+current=$(diskutil list external physical 2>/dev/null | grep -Eo 'disk[0-9]+')
+
+if [ -z "$current" ]; then
+    echo "All drives disconnected. Safe to go!"
+else
+    echo "Waiting for drives to be physically disconnected..."
+    spinner='|/-\'
+    spin_idx=0
+    start=$SECONDS
+
+    while IFS= read -r drive; do printf "  %-8s [ ]\n" "$drive"; done <<< "$drives"
+
+    while true; do
+        char="${spinner:$((spin_idx % 4)):1}"
+        current=$(diskutil list external physical 2>/dev/null | grep -Eo 'disk[0-9]+')
+        printf "\033[%dA" "$drive_count"
+        still=0
+        while IFS= read -r drive; do
+            if echo "$current" | grep -q "^${drive}$"; then
+                printf "  %-8s %-15s\n" "$drive" "[$char]"
+                ((still++))
+            else
+                printf "  %-8s %-15s\n" "$drive" "[disconnected]"
+            fi
+        done <<< "$drives"
+        if [ $still -eq 0 ]; then
+            echo ""
+            echo "All drives disconnected. Safe to go!"
+            break
+        fi
+        if [ $(( SECONDS - start )) -ge 60 ]; then
+            echo ""
+            echo "Timed out after 60s. Drives may still be connected."
+            break
+        fi
+        ((spin_idx++))
+        sleep 0.25
+    done
+fi
 
 echo "Goodbye!"
