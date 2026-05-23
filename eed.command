@@ -1,5 +1,64 @@
 #! /bin/bash
 VERSION="2.0.0"
+MY_TTY=$(tty 2>/dev/null)
+
+# Processes that keep files open on volumes without actively transferring user data
+SYSTEM_PROCS="mds mds_stores fseventsd diskarbitrationd kernel_task corestoraged mdflagwriter mdworker mdworker_shared"
+EXCLUDE_PATTERN=$(printf '%s|' $SYSTEM_PROCS | sed 's/|$//')
+
+# Returns mounted filesystem paths for a given disk identifier (e.g. disk2)
+get_mount_points() {
+    mount 2>/dev/null | grep -E "^/dev/${1}([sp][0-9]+)? on " | sed -E 's|^[^ ]+ on (.*) \(.*\)$|\1|'
+}
+
+# Returns user-visible processes with open write-mode files under a mount point
+check_active_writes() {
+    local mp="$1"
+    lsof -nPF pcna 2>/dev/null | awk -v mp="$mp" '
+        /^p/ { pid=substr($0,2) }
+        /^c/ { cmd=substr($0,2) }
+        /^a/ { acc=substr($0,2) }
+        /^n/ {
+            path=substr($0,2)
+            if ((acc=="w" || acc=="u") && \
+                (path==mp || (index(path,mp)==1 && substr(path,length(mp)+1,1)=="/")))
+                print cmd " (PID " pid ")"
+        }
+    ' | grep -vE "^($EXCLUDE_PATTERN) " | sort -u
+}
+
+# Scans all drives for active writes; prints a formatted summary or nothing if clean
+collect_transfers() {
+    local result="" drive mp writes
+    while IFS= read -r drive; do
+        while IFS= read -r mp; do
+            [ -z "$mp" ] && continue
+            writes=$(check_active_writes "$mp")
+            [ -z "$writes" ] && continue
+            result="${result}  ${drive} (${mp}):\n"
+            while IFS= read -r proc; do
+                result="${result}    ${proc}\n"
+            done <<< "$writes"
+        done <<< "$(get_mount_points "$drive")"
+    done <<< "$drives"
+    printf '%s' "$result"
+}
+
+# Closes the Terminal window/tab that launched this script, identified by TTY
+auto_close() {
+    [ -z "$MY_TTY" ] && return
+    printf '\nClosing window in 5 seconds... (Ctrl-C to keep open)\n'
+    sleep 5
+    osascript <<APPLESCRIPT 2>/dev/null
+tell application "Terminal"
+    repeat with w in windows
+        repeat with t in tabs of w
+            if tty of t is "$MY_TTY" then close w
+        end repeat
+    end repeat
+end tell
+APPLESCRIPT
+}
 
 echo ""
 echo "*** External Drive Ejection Utility ***"
@@ -27,7 +86,62 @@ drives=$(diskutil list external physical | grep -E '^/dev/' | grep -Eo 'disk[0-9
 if [ -z "$drives" ]; then
     echo "No external drives found."
     echo "Goodbye!"
+    auto_close
     exit 0
+fi
+
+# Check for active file transfers before ejecting
+echo -n "Checking for active file transfers..."
+transfers_found=$(collect_transfers)
+
+if [ -z "$transfers_found" ]; then
+    echo "none."
+else
+    echo ""
+    echo ""
+    while true; do
+        printf "  Warning: Active file writes detected:\n"
+        printf "%b" "$transfers_found"
+        echo ""
+        printf "  [W] Wait 10 seconds and re-check\n"
+        printf "  [C] Continue ejecting anyway\n"
+        printf "  [A] Abort\n"
+        echo ""
+        read -r -n 1 -p "  Choice [W/C/A]: " choice
+        echo ""
+        case "$choice" in
+            [Ww])
+                echo ""
+                printf "  Waiting 10 seconds..."
+                sleep 10
+                printf "\r  Re-checking for active file transfers..."
+                transfers_found=$(collect_transfers)
+                if [ -z "$transfers_found" ]; then
+                    echo "clear!"
+                    echo ""
+                    break
+                else
+                    echo ""
+                    echo ""
+                fi
+                ;;
+            [Cc])
+                echo ""
+                break
+                ;;
+            [Aa])
+                echo ""
+                echo "Aborted. No drives were ejected."
+                echo "Goodbye!"
+                auto_close
+                exit 1
+                ;;
+            *)
+                echo "  Please press W, C, or A."
+                echo ""
+                ;;
+        esac
+    done
 fi
 
 # Eject each drive and report status (no sudo needed)
@@ -96,3 +210,4 @@ else
 fi
 
 echo "Goodbye!"
+auto_close
