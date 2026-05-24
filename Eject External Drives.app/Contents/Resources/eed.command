@@ -1,5 +1,5 @@
 #! /bin/bash
-VERSION="2.0.2"
+VERSION="2.0.3"
 
 # Processes that keep files open on volumes without actively transferring user data
 SYSTEM_PROCS="mds mds_stores fseventsd diskarbitrationd kernel_task corestoraged mdflagwriter mdworker mdworker_shared"
