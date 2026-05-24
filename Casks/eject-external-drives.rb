@@ -14,5 +14,15 @@ cask "eject-external-drives" do
 
   uninstall delete: "#{Dir.home}/Desktop/Eject External Drives.command"
 
+  caveats <<~EOS
+    macOS will block the app on first launch because it is not code-signed.
+
+    To allow it, either:
+      • System Settings → Privacy & Security → scroll down → "Open Anyway"
+      • Or run: xattr -dr com.apple.quarantine "/Applications/Eject External Drives.app"
+
+    The Desktop shortcut (Eject External Drives.command) works without this step.
+  EOS
+
   zap trash: ["#{Dir.home}/Desktop/Eject External Drives.command"]
 end
