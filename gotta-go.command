@@ -1,11 +1,11 @@
 #! /bin/bash
-VERSION="2.0.5"
+VERSION="2.0.6"
 
 _tty=$(tty 2>/dev/null)
 case "$_tty" in /dev/*) ;; *) _tty="" ;; esac
 _alert_msg=""
 _on_exit() {
-    [ -n "$_alert_msg" ] && osascript -e "display alert \"Eject External Drives\" message \"${_alert_msg}\"" 2>/dev/null
+    [ -n "$_alert_msg" ] && osascript -e "display alert \"Gotta Go\" message \"${_alert_msg}\"" 2>/dev/null
     [ -n "$_tty" ] || return
     local _tty_short="${_tty#/dev/}"
     local _tty_full="$_tty"

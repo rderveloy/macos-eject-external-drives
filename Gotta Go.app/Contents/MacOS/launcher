@@ -5,15 +5,15 @@ while [ -L "$SELF" ]; do
     SELF=$(readlink "$SELF")
     hops=$((hops + 1))
     if [ "$hops" -ge 40 ]; then
-        osascript -e 'display alert "Eject External Drives" message "Could not resolve app bundle path (circular symlink detected)." as critical'
+        osascript -e 'display alert "Gotta Go" message "Could not resolve app bundle path (circular symlink detected)." as critical'
         exit 1
     fi
 done
 SELF_DIR=$(cd "$(dirname "$SELF")" && pwd)
-SCRIPT=$(cd "$SELF_DIR/../Resources" && pwd)/eed.command
+SCRIPT=$(cd "$SELF_DIR/../Resources" && pwd)/gotta-go.command
 
 if [ ! -f "$SCRIPT" ]; then
-    osascript -e 'display alert "Eject External Drives" message "Could not locate eed.command inside the app bundle." as critical'
+    osascript -e 'display alert "Gotta Go" message "Could not locate gotta-go.command inside the app bundle." as critical'
     exit 1
 fi
 
