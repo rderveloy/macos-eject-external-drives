@@ -1,6 +1,19 @@
 #! /bin/bash
 VERSION="2.0.4"
 
+_tty=$(tty 2>/dev/null)
+case "$_tty" in /dev/*) _tty="${_tty#/dev/}" ;; *) _tty="" ;; esac
+_alert_msg=""
+_on_exit() {
+    [ -n "$_alert_msg" ] && osascript -e "display alert \"Eject External Drives\" message \"${_alert_msg}\"" 2>/dev/null
+    [ -n "$_tty" ] || return
+    ( sleep 0.1
+      osascript -e "tell application \"Terminal\" to close (every window whose (count of tabs) = 1 and tty of tab 1 is \"${_tty}\")" 2>/dev/null
+    ) &
+    disown $! 2>/dev/null || true
+}
+trap '_on_exit' EXIT
+
 # Processes that keep files open on volumes without actively transferring user data
 SYSTEM_PROCS="mds mds_stores fseventsd diskarbitrationd kernel_task corestoraged mdflagwriter mdworker mdworker_shared"
 EXCLUDE_PATTERN=$(printf '%s|' $SYSTEM_PROCS | sed 's/|$//')
@@ -87,7 +100,7 @@ drives=$(diskutil list external physical | grep -E '^/dev/' | grep -Eo 'disk[0-9
 if [ -z "$drives" ]; then
     echo "No external drives found."
     echo "Goodbye!"
-    osascript -e 'display alert "Eject External Drives" message "No external drives found."' 2>/dev/null
+    _alert_msg="No external drives found. Safe to go!"
     exit 0
 fi
 
@@ -142,6 +155,7 @@ else
                 echo ""
                 echo "Aborted. No drives were ejected."
                 echo "Goodbye!"
+                _alert_msg="Aborted. No drives were ejected."
                 exit 1
                 ;;
             [Ff])
@@ -204,7 +218,7 @@ echo ""
 if [ $failed -eq 0 ]; then
     echo "All $success drive(s) ejected. Safe to go!"
     echo "Goodbye!"
-    osascript -e "display alert \"Eject External Drives\" message \"All ${success} drive(s) ejected. Safe to go!\"" 2>/dev/null
+    _alert_msg="All ${success} drive(s) ejected. Safe to go!"
     exit 0
 fi
 
@@ -217,6 +231,7 @@ current=$(diskutil list external physical 2>/dev/null | grep -Eo 'disk[0-9]+')
 
 if [ -z "$current" ]; then
     echo "All drives ejected. Safe to go!"
+    _alert_msg="All drives ejected. Safe to go!"
 else
     echo "Waiting for remaining drives..."
     spin_idx=0
@@ -239,11 +254,13 @@ else
         if [ $still -eq 0 ]; then
             echo ""
             echo "All drives ejected. Safe to go!"
+            _alert_msg="All drives ejected. Safe to go!"
             break
         fi
         if [ $(( SECONDS - start )) -ge 15 ]; then
             echo ""
             echo "Timed out. Some drives may not have ejected."
+            _alert_msg="Timed out. Some drives may not have ejected."
             break
         fi
         ((spin_idx++))
