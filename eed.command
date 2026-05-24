@@ -77,6 +77,8 @@ fi
 echo -n "Checking for active file transfers..."
 transfers_found=$(collect_transfers)
 
+force_eject=0
+
 if [ -z "$transfers_found" ]; then
     echo "none."
 else
@@ -86,11 +88,12 @@ else
         printf "  Warning: Active file writes detected:\n"
         printf '%s' "$transfers_found"
         echo ""
-        printf "  [W] Wait 10 seconds and re-check\n"
+        printf "  [W] Wait 5 seconds and re-check  (default)\n"
         printf "  [C] Continue ejecting anyway\n"
         printf "  [A] Abort\n"
+        printf "  [F] Force eject (may leave incomplete files on the drive)\n"
         echo ""
-        read -r -n 1 -p "  Choice [W/c/a]: " choice
+        read -r -n 1 -p "  Choice [W/c/a/f]: " choice
         echo ""
         case "$choice" in
             [Ww]|"")
@@ -118,8 +121,24 @@ else
                 echo "Goodbye!"
                 exit 1
                 ;;
+            [Ff])
+                echo ""
+                printf "  WARNING: Force eject closes all open files immediately.\n"
+                printf "           Incomplete transfers may leave corrupt files on the drive.\n"
+                echo ""
+                read -r -n 1 -p "  Confirm force eject? [y/N]: " confirm
+                echo ""
+                if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+                    force_eject=1
+                    echo ""
+                    break
+                else
+                    echo "  Cancelled."
+                    echo ""
+                fi
+                ;;
             *)
-                echo "  Please press W, C, or A."
+                echo "  Please press W, C, A, or F."
                 echo ""
                 ;;
         esac
@@ -134,7 +153,11 @@ spinner='|/-\'
 spin_idx=0
 
 while IFS= read -r drive; do
-    diskutil eject "$drive" >/dev/null 2>&1 &
+    if [ "$force_eject" -eq 1 ]; then
+        diskutil eject force "$drive" >/dev/null 2>&1 &
+    else
+        diskutil eject "$drive" >/dev/null 2>&1 &
+    fi
     eject_pid=$!
     while kill -0 "$eject_pid" 2>/dev/null; do
         printf "\r  %-8s [%s]" "$drive" "${spinner:$((spin_idx % 4)):1}"
