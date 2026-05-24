@@ -1,16 +1,9 @@
 #! /bin/bash
 VERSION="2.0.4"
 
-_tty=$(tty 2>/dev/null)
-case "$_tty" in /dev/*) _tty="${_tty#/dev/}" ;; *) _tty="" ;; esac
 _alert_msg=""
 _on_exit() {
     [ -n "$_alert_msg" ] && osascript -e "display alert \"Eject External Drives\" message \"${_alert_msg}\"" 2>/dev/null
-    [ -n "$_tty" ] || return
-    ( sleep 0.1
-      osascript -e "tell application \"Terminal\" to close (every window whose (count of tabs) = 1 and tty of tab 1 is \"${_tty}\")" 2>/dev/null
-    ) &
-    disown $! 2>/dev/null || true
 }
 trap '_on_exit' EXIT
 
