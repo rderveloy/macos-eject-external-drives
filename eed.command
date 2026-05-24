@@ -2,13 +2,26 @@
 VERSION="2.0.5"
 
 _tty=$(tty 2>/dev/null)
-case "$_tty" in /dev/*) _tty="${_tty#/dev/}" ;; *) _tty="" ;; esac
+case "$_tty" in /dev/*) ;; *) _tty="" ;; esac
 _alert_msg=""
 _on_exit() {
     [ -n "$_alert_msg" ] && osascript -e "display alert \"Eject External Drives\" message \"${_alert_msg}\"" 2>/dev/null
     [ -n "$_tty" ] || return
-    ( sleep 0.1
-      osascript -e "tell application \"Terminal\" to close (every window whose (count of tabs) = 1 and tty of tab 1 is \"${_tty}\")" 2>/dev/null
+    local _tty_short="${_tty#/dev/}"
+    local _tty_full="$_tty"
+    ( trap '' HUP
+      sleep 0.3
+      osascript -e "
+tell application \"Terminal\"
+    repeat with w in every window
+        repeat with t in every tab of w
+            if tty of t is \"${_tty_short}\" or tty of t is \"${_tty_full}\" then
+                close t
+                return
+            end if
+        end repeat
+    end repeat
+end tell" 2>/dev/null
     ) &
     disown $! 2>/dev/null || true
 }
