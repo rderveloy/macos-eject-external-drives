@@ -7,9 +7,9 @@ cask "eject-external-drives" do
   desc "Safely eject all external drives on macOS, stopping Time Machine if needed"
   homepage "https://github.com/rderveloy/macos-eject-external-drives"
 
-  app "Eject External Drives.app"
+  app "macos-eject-external-drives-#{version}/Eject External Drives.app"
 
-  artifact "eed.command",
+  artifact "macos-eject-external-drives-#{version}/eed.command",
            target: "#{Dir.home}/Desktop/Eject External Drives.command"
 
   uninstall delete: "#{Dir.home}/Desktop/Eject External Drives.command"
