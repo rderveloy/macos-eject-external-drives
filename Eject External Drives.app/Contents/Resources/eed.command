@@ -90,13 +90,13 @@ else
         printf "  [C] Continue ejecting anyway\n"
         printf "  [A] Abort\n"
         echo ""
-        read -r -n 1 -p "  Choice [W/C/A]: " choice
+        read -r -n 1 -p "  Choice [W/c/a]: " choice
         echo ""
         case "$choice" in
-            [Ww])
+            [Ww]|"")
                 echo ""
-                printf "  Waiting 10 seconds..."
-                sleep 10
+                printf "  Waiting 5 seconds..."
+                sleep 5
                 printf "\r  Re-checking for active file transfers..."
                 transfers_found=$(collect_transfers)
                 if [ -z "$transfers_found" ]; then
