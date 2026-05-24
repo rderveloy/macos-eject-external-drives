@@ -1,5 +1,5 @@
 #! /bin/bash
-VERSION="2.0.0"
+VERSION="2.0.2"
 MY_TTY=$(tty 2>/dev/null)
 
 # Processes that keep files open on volumes without actively transferring user data
@@ -35,9 +35,9 @@ collect_transfers() {
             [ -z "$mp" ] && continue
             writes=$(check_active_writes "$mp")
             [ -z "$writes" ] && continue
-            result="${result}  ${drive} (${mp}):\n"
+            result="${result}  ${drive} (${mp}):"$'\n'
             while IFS= read -r proc; do
-                result="${result}    ${proc}\n"
+                result="${result}    ${proc}"$'\n'
             done <<< "$writes"
         done <<< "$(get_mount_points "$drive")"
     done <<< "$drives"
@@ -101,7 +101,7 @@ else
     echo ""
     while true; do
         printf "  Warning: Active file writes detected:\n"
-        printf "%b" "$transfers_found"
+        printf '%s' "$transfers_found"
         echo ""
         printf "  [W] Wait 10 seconds and re-check\n"
         printf "  [C] Continue ejecting anyway\n"
