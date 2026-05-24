@@ -1,5 +1,5 @@
 cask "gotta-go" do
-  version "1.0.0"
+  version "2.0.7"
   sha256 "PLACEHOLDER_REPLACE_AFTER_RELEASE"
 
   url "https://github.com/rderveloy/gotta-go/archive/refs/tags/v#{version}.tar.gz"
