@@ -9,9 +9,14 @@ if [ ! -f "$SCRIPT" ]; then
     exit 1
 fi
 
-osascript <<APPLESCRIPT
-tell application "Terminal"
-    activate
-    do script "exec '$SCRIPT'"
-end tell
+# Pass $SCRIPT as an argument so AppleScript's quoted form of handles any
+# special characters in the install path (e.g. single quotes, spaces).
+osascript - "$SCRIPT" <<'APPLESCRIPT'
+on run argv
+    set scriptPath to item 1 of argv
+    tell application "Terminal"
+        activate
+        do script "exec " & quoted form of scriptPath
+    end tell
+end run
 APPLESCRIPT

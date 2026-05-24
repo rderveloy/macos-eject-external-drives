@@ -41,6 +41,24 @@ brew uninstall --cask eject-external-drives
 brew untap rderveloy/macos-eject-external-drives
 ```
 
+### First launch: macOS Gatekeeper
+
+macOS will block **Eject External Drives.app** on first launch because it is not code-signed. You will see a dialog with only "Move to Trash" or "Done" as options.
+
+To allow it, choose one of:
+
+**Option A — System Settings:**
+1. Open **System Settings → Privacy & Security**
+2. Scroll down to the Security section
+3. Click **Open Anyway** next to the Eject External Drives entry
+
+**Option B — Terminal:**
+```sh
+xattr -dr com.apple.quarantine "/Applications/Eject External Drives.app"
+```
+
+This only needs to be done once. The **Eject External Drives.command** shortcut on your Desktop is not affected by Gatekeeper and works immediately without any extra steps.
+
 ---
 
 ## Manual Install

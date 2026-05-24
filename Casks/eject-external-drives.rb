@@ -1,6 +1,6 @@
 cask "eject-external-drives" do
-  version "2.0.2"
-  sha256 "aee1247725fed9fc48f1638e846f89852311489e92fd330c810e1bf8f4d9e381"
+  version "2.0.3"
+  sha256 "PLACEHOLDER_REPLACE_AFTER_RELEASE"
 
   url "https://github.com/rderveloy/macos-eject-external-drives/archive/refs/tags/v#{version}.tar.gz"
   name "Eject External Drives"

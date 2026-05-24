@@ -1,6 +1,5 @@
 #! /bin/bash
-VERSION="2.0.0"
-MY_TTY=$(tty 2>/dev/null)
+VERSION="2.0.3"
 
 # Processes that keep files open on volumes without actively transferring user data
 SYSTEM_PROCS="mds mds_stores fseventsd diskarbitrationd kernel_task corestoraged mdflagwriter mdworker mdworker_shared"
@@ -35,30 +34,15 @@ collect_transfers() {
             [ -z "$mp" ] && continue
             writes=$(check_active_writes "$mp")
             [ -z "$writes" ] && continue
-            result="${result}  ${drive} (${mp}):\n"
+            result="${result}  ${drive} (${mp}):"$'\n'
             while IFS= read -r proc; do
-                result="${result}    ${proc}\n"
+                result="${result}    ${proc}"$'\n'
             done <<< "$writes"
         done <<< "$(get_mount_points "$drive")"
     done <<< "$drives"
     printf '%s' "$result"
 }
 
-# Closes the Terminal window/tab that launched this script, identified by TTY
-auto_close() {
-    [ -z "$MY_TTY" ] && return
-    printf '\nClosing window in 5 seconds... (Ctrl-C to keep open)\n'
-    sleep 5
-    osascript <<APPLESCRIPT 2>/dev/null
-tell application "Terminal"
-    repeat with w in windows
-        repeat with t in tabs of w
-            if tty of t is "$MY_TTY" then close w
-        end repeat
-    end repeat
-end tell
-APPLESCRIPT
-}
 
 echo ""
 echo "*** External Drive Ejection Utility ***"
@@ -86,7 +70,6 @@ drives=$(diskutil list external physical | grep -E '^/dev/' | grep -Eo 'disk[0-9
 if [ -z "$drives" ]; then
     echo "No external drives found."
     echo "Goodbye!"
-    auto_close
     exit 0
 fi
 
@@ -101,7 +84,7 @@ else
     echo ""
     while true; do
         printf "  Warning: Active file writes detected:\n"
-        printf "%b" "$transfers_found"
+        printf '%s' "$transfers_found"
         echo ""
         printf "  [W] Wait 10 seconds and re-check\n"
         printf "  [C] Continue ejecting anyway\n"
@@ -133,7 +116,6 @@ else
                 echo ""
                 echo "Aborted. No drives were ejected."
                 echo "Goodbye!"
-                auto_close
                 exit 1
                 ;;
             *)
@@ -175,7 +157,6 @@ echo ""
 if [ $failed -eq 0 ]; then
     echo "All $success drive(s) ejected. Safe to go!"
     echo "Goodbye!"
-    auto_close
     exit 0
 fi
 
@@ -223,4 +204,3 @@ else
 fi
 
 echo "Goodbye!"
-auto_close
