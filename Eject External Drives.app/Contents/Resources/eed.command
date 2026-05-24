@@ -10,10 +10,19 @@ get_mount_points() {
     mount 2>/dev/null | grep -E "^/dev/${1}([sp][0-9]+)? on " | sed -E 's|^[^ ]+ on (.*) \(.*\)$|\1|'
 }
 
+# Runs lsof once and caches output; sets lsof_available (0/1).
+# Caching avoids running lsof once per mount point and lets us detect failure.
+_lsof_cache=""
+lsof_available=0
+_run_lsof() {
+    _lsof_cache=$(lsof -nPF pcna 2>/dev/null)
+    [ -n "$_lsof_cache" ] && lsof_available=1 || lsof_available=0
+}
+
 # Returns user-visible processes with open write-mode files under a mount point
 check_active_writes() {
     local mp="$1"
-    lsof -nPF pcna 2>/dev/null | awk -v mp="$mp" '
+    printf '%s\n' "$_lsof_cache" | awk -v mp="$mp" '
         /^p/ { pid=substr($0,2) }
         /^c/ { cmd=substr($0,2) }
         /^a/ { acc=substr($0,2) }
@@ -28,9 +37,12 @@ check_active_writes() {
 
 # Sets transfers_found (display string) and drives_with_transfers (space-separated
 # drive identifiers) for any drive with active user-visible writes.
+# Refreshes the lsof cache on each call.
 detect_transfers() {
     transfers_found=""
     drives_with_transfers=""
+    _run_lsof
+    [ "$lsof_available" -eq 0 ] && return
     local drive mp writes has_transfer
     while IFS= read -r drive; do
         has_transfer=0
@@ -84,7 +96,12 @@ detect_transfers
 
 force_eject=0
 
-if [ -z "$transfers_found" ]; then
+if [ "$lsof_available" -eq 0 ]; then
+    echo "unavailable."
+    echo ""
+    echo "  Warning: Could not verify active file transfers — proceeding without transfer detection."
+    echo ""
+elif [ -z "$transfers_found" ]; then
     echo "none."
 else
     echo ""

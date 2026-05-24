@@ -1,6 +1,14 @@
 #!/bin/bash
 SELF="$0"
-while [ -L "$SELF" ]; do SELF=$(readlink "$SELF"); done
+hops=0
+while [ -L "$SELF" ]; do
+    SELF=$(readlink "$SELF")
+    hops=$((hops + 1))
+    if [ "$hops" -ge 40 ]; then
+        osascript -e 'display alert "Eject External Drives" message "Could not resolve app bundle path (circular symlink detected)." as critical'
+        exit 1
+    fi
+done
 SELF_DIR=$(cd "$(dirname "$SELF")" && pwd)
 SCRIPT=$(cd "$SELF_DIR/../Resources" && pwd)/eed.command
 
