@@ -144,41 +144,54 @@ else
     done
 fi
 
-# Eject each drive and report status (no sudo needed)
+# Eject each drive; spin per-drive while diskutil works in the background
 echo "Ejecting external drives:"
 success=0
 failed=0
+spinner='|/-\'
+spin_idx=0
+
 while IFS= read -r drive; do
-    echo -n "  $drive ... "
-    if diskutil eject "$drive" >/dev/null 2>&1; then
-        echo "ejected"
+    diskutil eject "$drive" >/dev/null 2>&1 &
+    eject_pid=$!
+    while kill -0 "$eject_pid" 2>/dev/null; do
+        printf "\r  %-8s [%s]" "$drive" "${spinner:$((spin_idx % 4)):1}"
+        ((spin_idx++))
+        sleep 0.1
+    done
+    wait "$eject_pid"
+    if [ $? -eq 0 ]; then
+        printf "\r  %-8s [ejected]\n" "$drive"
         ((success++))
     else
-        echo "FAILED"
+        printf "\r  %-8s [FAILED] \n" "$drive"
         ((failed++))
     fi
 done <<< "$drives"
 
-# Summary
 echo ""
+
+# Happy path: diskutil eject returning 0 means the drive is already gone — exit immediately
 if [ $failed -eq 0 ]; then
-    echo "All drives ejected successfully ($success total)."
-else
-    echo "Warning: $failed drive(s) failed to eject. $success ejected successfully."
+    echo "All $success drive(s) ejected. Safe to go!"
+    echo "Goodbye!"
+    auto_close
+    exit 0
 fi
 
+echo "Warning: $failed drive(s) failed to eject. $success ejected successfully."
 echo ""
+
+# Some drives failed — poll briefly in case they finish unmounting on their own
 drive_count=$(echo "$drives" | wc -l | xargs)
 current=$(diskutil list external physical 2>/dev/null | grep -Eo 'disk[0-9]+')
 
 if [ -z "$current" ]; then
     echo "All drives ejected. Safe to go!"
 else
-    echo "Waiting for drives to be ejected..."
-    spinner='|/-\'
+    echo "Waiting for remaining drives..."
     spin_idx=0
     start=$SECONDS
-
     while IFS= read -r drive; do printf "  %-8s [ ]\n" "$drive"; done <<< "$drives"
 
     while true; do
@@ -188,10 +201,10 @@ else
         still=0
         while IFS= read -r drive; do
             if echo "$current" | grep -q "^${drive}$"; then
-                printf "  %-8s %-15s\n" "$drive" "[$char]"
+                printf "  %-8s [%s]\n" "$drive" "$char"
                 ((still++))
             else
-                printf "  %-8s %-15s\n" "$drive" "[ejected]"
+                printf "  %-8s [ejected]\n" "$drive"
             fi
         done <<< "$drives"
         if [ $still -eq 0 ]; then
@@ -199,13 +212,13 @@ else
             echo "All drives ejected. Safe to go!"
             break
         fi
-        if [ $(( SECONDS - start )) -ge 60 ]; then
+        if [ $(( SECONDS - start )) -ge 15 ]; then
             echo ""
-            echo "Timed out after 60s. Some drives may not have ejected."
+            echo "Timed out. Some drives may not have ejected."
             break
         fi
         ((spin_idx++))
-        sleep 0.25
+        sleep 0.1
     done
 fi
 
