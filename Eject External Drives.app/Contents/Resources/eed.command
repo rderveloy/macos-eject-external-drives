@@ -203,6 +203,7 @@ echo ""
 if [ $failed -eq 0 ]; then
     echo "All $success drive(s) ejected. Safe to go!"
     echo "Goodbye!"
+    osascript -e "display alert \"Eject External Drives\" message \"All ${success} drive(s) ejected. Safe to go!\"" 2>/dev/null
     exit 0
 fi
 
