@@ -1,6 +1,15 @@
 #! /bin/bash
 VERSION="2.0.3"
 
+_tty=$(tty 2>/dev/null)
+case "$_tty" in /dev/*) _tty="${_tty#/dev/}" ;; *) _tty="" ;; esac
+_close_terminal() {
+    [ -n "$_tty" ] || return
+    (sleep 0.2; osascript -e "tell application \"Terminal\" to close (every window whose (count of tabs) = 1 and tty of tab 1 is \"${_tty}\")") &
+    disown $! 2>/dev/null || true
+}
+trap '_close_terminal' EXIT
+
 # Processes that keep files open on volumes without actively transferring user data
 SYSTEM_PROCS="mds mds_stores fseventsd diskarbitrationd kernel_task corestoraged mdflagwriter mdworker mdworker_shared"
 EXCLUDE_PATTERN=$(printf '%s|' $SYSTEM_PROCS | sed 's/|$//')
