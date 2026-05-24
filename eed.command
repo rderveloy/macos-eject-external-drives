@@ -1,5 +1,5 @@
 #! /bin/bash
-VERSION="2.0.3"
+VERSION="2.0.4"
 
 # Processes that keep files open on volumes without actively transferring user data
 SYSTEM_PROCS="mds mds_stores fseventsd diskarbitrationd kernel_task corestoraged mdflagwriter mdworker mdworker_shared"
@@ -203,6 +203,7 @@ echo ""
 if [ $failed -eq 0 ]; then
     echo "All $success drive(s) ejected. Safe to go!"
     echo "Goodbye!"
+    osascript -e "display alert \"Eject External Drives\" message \"All ${success} drive(s) ejected. Safe to go!\"" 2>/dev/null
     exit 0
 fi
 
