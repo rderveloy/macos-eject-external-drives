@@ -87,6 +87,7 @@ drives=$(diskutil list external physical | grep -E '^/dev/' | grep -Eo 'disk[0-9
 if [ -z "$drives" ]; then
     echo "No external drives found."
     echo "Goodbye!"
+    osascript -e 'display alert "Eject External Drives" message "No external drives found."' 2>/dev/null
     exit 0
 fi
 
