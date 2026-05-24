@@ -26,21 +26,26 @@ check_active_writes() {
     ' | grep -vE "^($EXCLUDE_PATTERN) " | sort -u
 }
 
-# Scans all drives for active writes; prints a formatted summary or nothing if clean
-collect_transfers() {
-    local result="" drive mp writes
+# Sets transfers_found (display string) and drives_with_transfers (space-separated
+# drive identifiers) for any drive with active user-visible writes.
+detect_transfers() {
+    transfers_found=""
+    drives_with_transfers=""
+    local drive mp writes has_transfer
     while IFS= read -r drive; do
+        has_transfer=0
         while IFS= read -r mp; do
             [ -z "$mp" ] && continue
             writes=$(check_active_writes "$mp")
             [ -z "$writes" ] && continue
-            result="${result}  ${drive} (${mp}):"$'\n'
+            has_transfer=1
+            transfers_found="${transfers_found}  ${drive} (${mp}):"$'\n'
             while IFS= read -r proc; do
-                result="${result}    ${proc}"$'\n'
+                transfers_found="${transfers_found}    ${proc}"$'\n'
             done <<< "$writes"
         done <<< "$(get_mount_points "$drive")"
+        [ "$has_transfer" -eq 1 ] && drives_with_transfers="$drives_with_transfers $drive"
     done <<< "$drives"
-    printf '%s' "$result"
 }
 
 
@@ -75,7 +80,7 @@ fi
 
 # Check for active file transfers before ejecting
 echo -n "Checking for active file transfers..."
-transfers_found=$(collect_transfers)
+detect_transfers
 
 force_eject=0
 
@@ -101,7 +106,7 @@ else
                 printf "  Waiting 5 seconds..."
                 sleep 5
                 printf "\r  Re-checking for active file transfers..."
-                transfers_found=$(collect_transfers)
+                detect_transfers
                 if [ -z "$transfers_found" ]; then
                     echo "clear!"
                     echo ""
@@ -153,7 +158,8 @@ spinner='|/-\'
 spin_idx=0
 
 while IFS= read -r drive; do
-    if [ "$force_eject" -eq 1 ]; then
+    if [ "$force_eject" -eq 1 ] && \
+       case " $drives_with_transfers " in *" $drive "*) true ;; *) false ;; esac; then
         diskutil eject force "$drive" >/dev/null 2>&1 &
     else
         diskutil eject "$drive" >/dev/null 2>&1 &
