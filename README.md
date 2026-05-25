@@ -78,8 +78,18 @@ Double-click **Gotta Go** in Launchpad, from the Dock, on your Desktop,
 or run `gotta-go.command` directly in Terminal. The script will:
 
 1. Stop any running Time Machine backup (prompts for your password only if needed).
-2. Eject all external physical drives, reporting success or failure per drive.
-3. Display a live status for each drive and exit once all are ejected.
+2. Check for active file transfers to your external drives and prompt you if any are found -- you can wait and re-check, continue anyway, force eject, or abort.
+3. Eject all external physical drives, reporting success or failure per drive.
+4. Display a live status for each drive and exit once all are ejected.
 
-Note: This script will stop a Time Machine backup in progress, but will **not**
-automatically cancel file transfers that are in progress to your external drives.
+---
+
+## Support
+
+gotta-go is a free and open-source one-shot "eject everything and go" utility. I made it because Finder's tiny eject icons drove me up the wall (and I kept almost ejecting my iPhone), plus Time Machine was always in the middle of a backup when I had to dash.
+
+If it saved you some hassle, a coffee helps cover the Apple Developer license, which will let me sign the app so it stops triggering the Gatekeeper warning, and keeps me caffeinated while I improve it.
+
+[☕ Buy me a coffee](https://ko-fi.com/gottago)
+
+No pressure though. Using it and sharing it is support enough.
