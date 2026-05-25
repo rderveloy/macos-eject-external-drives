@@ -1,6 +1,6 @@
 cask "gotta-go" do
   version "2.0.7"
-  sha256 "PLACEHOLDER_REPLACE_AFTER_RELEASE"
+  sha256 "7032157de65cbebcc6394e60ee28610b016d7eb2e8092d51a1438e7f0ca87db0"
 
   url "https://github.com/rderveloy/gotta-go/archive/refs/tags/v#{version}.tar.gz"
   name "Gotta Go"
