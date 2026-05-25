@@ -61,6 +61,18 @@ check_active_writes() {
     ' | grep -vE "^($EXCLUDE_PATTERN) " | sort -u
 }
 
+# Returns a human-readable name for a disk identifier, falling back to the
+# media name then the identifier itself if no volume name is available.
+get_drive_name() {
+    local drive="$1" info name
+    info=$(diskutil info "$drive" 2>/dev/null)
+    name=$(printf '%s\n' "$info" | sed -n 's/^ *Volume Name: *//p' | sed 's/ *$//')
+    if [ -z "$name" ] || [ "$name" = "Not applicable" ]; then
+        name=$(printf '%s\n' "$info" | sed -n 's/^ *Media Name: *//p' | sed 's/ *$//')
+    fi
+    [ -n "$name" ] && printf '%s' "$name" || printf '%s' "$drive"
+}
+
 # Sets transfers_found (display string) and drives_with_transfers (space-separated
 # drive identifiers) for any drive with active user-visible writes.
 # Refreshes the lsof cache on each call.
@@ -195,6 +207,15 @@ else
     done
 fi
 
+# Pre-compute display names for all drives
+drive_names=""
+while IFS= read -r d; do
+    name=$(get_drive_name "$d")
+    [ ${#name} -gt 20 ] && name="${name:0:17}..."
+    drive_names="${drive_names}${name}"$'\n'
+done <<< "$drives"
+drive_names="${drive_names%?}"
+
 # Eject each drive; spin per-drive while diskutil works in the background
 echo "Ejecting external drives:"
 success=0
@@ -202,7 +223,7 @@ failed=0
 spinner='|/-\'
 spin_idx=0
 
-while IFS= read -r drive; do
+while IFS= read -r drive <&3 && IFS= read -r drive_name <&4; do
     if [ "$force_eject" -eq 1 ] && \
        case " $drives_with_transfers " in *" $drive "*) true ;; *) false ;; esac; then
         diskutil eject force "$drive" >/dev/null 2>&1 &
@@ -211,19 +232,19 @@ while IFS= read -r drive; do
     fi
     eject_pid=$!
     while kill -0 "$eject_pid" 2>/dev/null; do
-        printf "\r  %-8s [%s]" "$drive" "${spinner:$((spin_idx % 4)):1}"
+        printf "\r  %-20s [%s]" "$drive_name" "${spinner:$((spin_idx % 4)):1}"
         ((spin_idx++))
         sleep 0.1
     done
     wait "$eject_pid"
     if [ $? -eq 0 ]; then
-        printf "\r  %-8s [ejected]\n" "$drive"
+        printf "\r  %-20s [ejected]\n" "$drive_name"
         ((success++))
     else
-        printf "\r  %-8s [FAILED] \n" "$drive"
+        printf "\r  %-20s [FAILED] \n" "$drive_name"
         ((failed++))
     fi
-done <<< "$drives"
+done 3<<< "$drives" 4<<< "$drive_names"
 
 echo ""
 
@@ -249,21 +270,21 @@ else
     echo "Waiting for remaining drives..."
     spin_idx=0
     start=$SECONDS
-    while IFS= read -r drive; do printf "  %-8s [ ]\n" "$drive"; done <<< "$drives"
+    while IFS= read -r drive_name <&4; do printf "  %-20s [ ]\n" "$drive_name"; done 4<<< "$drive_names"
 
     while true; do
         char="${spinner:$((spin_idx % 4)):1}"
         current=$(diskutil list external physical 2>/dev/null | grep -Eo 'disk[0-9]+')
         printf "\033[%dA" "$drive_count"
         still=0
-        while IFS= read -r drive; do
+        while IFS= read -r drive <&3 && IFS= read -r drive_name <&4; do
             if echo "$current" | grep -q "^${drive}$"; then
-                printf "  %-8s [%s]\n" "$drive" "$char"
+                printf "  %-20s [%s]\n" "$drive_name" "$char"
                 ((still++))
             else
-                printf "  %-8s [ejected]\n" "$drive"
+                printf "  %-20s [ejected]\n" "$drive_name"
             fi
-        done <<< "$drives"
+        done 3<<< "$drives" 4<<< "$drive_names"
         if [ $still -eq 0 ]; then
             echo ""
             echo "All drives ejected. Safe to go!"
