@@ -78,11 +78,9 @@ Double-click **Gotta Go** in Launchpad, from the Dock, on your Desktop,
 or run `gotta-go.command` directly in Terminal. The script will:
 
 1. Stop any running Time Machine backup (prompts for your password only if needed).
-2. Eject all external physical drives, reporting success or failure per drive.
-3. Display a live status for each drive and exit once all are ejected.
-
-Note: This script will stop a Time Machine backup in progress, but will **not**
-automatically cancel file transfers that are in progress to your external drives.
+2. Check for active file transfers to your external drives and prompt you if any are found -- you can wait and re-check, continue anyway, force eject, or abort.
+3. Eject all external physical drives, reporting success or failure per drive.
+4. Display a live status for each drive and exit once all are ejected.
 
 ---
 
