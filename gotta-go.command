@@ -68,7 +68,8 @@ get_drive_name() {
     local drive="$1" info name
     info=$(diskutil info "$drive" 2>/dev/null)
     name=$(printf '%s\n' "$info" | sed -n 's/^ *Volume Name: *//p' | sed 's/ *$//')
-    if [ -z "$name" ] || [ "$name" = "Not applicable" ]; then
+    case "$name" in "Not applicable"*) name="" ;; esac
+    if [ -z "$name" ]; then
         name=$(printf '%s\n' "$info" | sed -n 's/^ *Media Name: *//p' | sed 's/ *$//')
     fi
     [ -n "$name" ] && printf '%s' "$name" || printf '%s' "$drive"
