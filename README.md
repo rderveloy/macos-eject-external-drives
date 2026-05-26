@@ -14,8 +14,7 @@ brew tap rderveloy/gotta-go https://github.com/rderveloy/gotta-go
 brew install --cask gotta-go
 ```
 
-This installs **Gotta Go.app** to `/Applications/` and places **Gotta Go.command**
-on your Desktop.
+This installs **Gotta Go.app** to `/Applications/` so it appears in Launchpad and can be pinned to the Dock.
 
 To uninstall:
 
@@ -41,8 +40,7 @@ To allow it, choose one of:
 xattr -dr com.apple.quarantine "/Applications/Gotta Go.app"
 ```
 
-This only needs to be done once. The **Gotta Go.command** Desktop shortcut is not
-affected by Gatekeeper and works immediately.
+This only needs to be done once.
 
 ### Manual
 
