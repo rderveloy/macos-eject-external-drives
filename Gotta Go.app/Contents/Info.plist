@@ -7,8 +7,8 @@
   <key>CFBundleIdentifier</key><string>com.rderveloy.gotta-go</string>
   <key>CFBundleName</key><string>Gotta Go</string>
   <key>CFBundleDisplayName</key><string>Gotta Go</string>
-  <key>CFBundleVersion</key><string>2.0.6</string>
-  <key>CFBundleShortVersionString</key><string>2.0.6</string>
+  <key>CFBundleVersion</key><string>2.0.8</string>
+  <key>CFBundleShortVersionString</key><string>2.0.8</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>LSMinimumSystemVersion</key><string>10.13</string>
   <key>LSUIElement</key><false/>
