@@ -1,5 +1,6 @@
 #! /bin/bash
-VERSION="2.0.7"
+VERSION="2.0.8"
+
 
 _tty=$(tty 2>/dev/null)
 case "$_tty" in /dev/*) ;; *) _tty="" ;; esac
